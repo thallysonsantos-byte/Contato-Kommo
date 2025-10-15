@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 
 const app = express();
-const PORT = 3000;
+const PORT = 3002;
 
 // Middleware para analisar corpos de requisição JSON
 app.use(express.json());
