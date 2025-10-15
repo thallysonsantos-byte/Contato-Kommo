@@ -2,23 +2,23 @@ const express = require('express');
 const axios = require('axios');
 
 const app = express();
-// Defina a porta que você abriu no firewall da OCI (ex: 3000 ou 3002)
+// Configuração da Porta (Ajuste para a porta que você abriu na OCI, ex: 3000 ou 3002)
 const PORT = 3002; 
 
 // Middleware para analisar corpos de requisição JSON
 app.use(express.json());
 
 // --- Configurações da API Externa (Kommo/amoCRM) ---
-const KOMMO_API_URL_CONTACTS = 'https://iborges.kommo.com/api/v4/contacts';
-const KOMMO_API_URL_LEADS = 'https://iborges.kommo.com/api/v4/leads';
+const KOMMO_API_URL_BASE = 'https://iborges.kommo.com/api/v4';
+const KOMMO_API_URL_CONTACTS = `${KOMMO_API_URL_BASE}/contacts`;
+const KOMMO_API_URL_LEADS = `${KOMMO_API_URL_BASE}/leads`;
 
-// ATENÇÃO: Este token está hardcoded APENAS para demonstração.
-// EM PRODUÇÃO, use variáveis de ambiente (.env) para segurança.
-const AUTH_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6Ijk3MTEzMzkyYjNjYzc0NmZlZWU0NmQ0NTRlYWZiYWFjNDk1NTRhMGI4MzI2Y2IxMWEyOTk2YzRiOTQ2OWZhNTNlMDI0M2JlMzBmYWVjMTIzIn0.eyJhdWQiOiJmM2YyYWRmMS00YWE5LTQwZmItYmMzNC0zMWNmNWYxZTQ5NTYiLCJqdGkiOiI5NzExMzM5MmIzY2M3NDZmZWVlNDZkNDU0ZWFmYmFhYzQ5NTU0YTBiODMyNmNiMTFhMjk5NmM0Yjk0NjlmYTUzZTAyNDNiZTMwZmFlYzEyMyIsImlhdCI6MTc2MDQ2NDQzNCwibmJmIjoxNzYwNDY0NDM0LCJleHAiOjE4MzAyOTc2MDAsInN1YiI6IjE0MDI2OTExIiwiZ3JhbnRfdHlwZSI6IiIsImFjY291bnRfaWQiOjM1MzcyODM2LCJiYXNlX2RvbWFpbiI6ImtvbW1vLmNvbSIsInZlcnNpb24iOjIsInNjb3BlcyI6WyJjcm0iLCJmaWxlcyIsImZpbGVzX2RlbGV0ZSIsIm5vdGlmaWNhdGlvbnMiLCJwdXNoX25vdGlmaWNhdGlvbnMiXSwidXNlcl9mbGFncyI6MCwiaGFzaF91dWlkIjoiZjhlZjg0ODktNjlkOC00ZDZmLThlY2UtNDUxY2JlYTczOWIzIiwiYXBpX2RvbWFpbiI6ImFwaS1jLmtvbW1vLmNvbSJ9.rz-xAf86xU17U2zG6OjhIMLv6I8AcAGmKN7EuqBz-efL4tWEbVEOBpty58tE8yHe1WTaY3I3sG_fVvKBSvQ4oxP-mVLzfzddW0TJnupEvKEMq9vgODrR5DmHaYSUAyTm_dmJDQzDxpU13ySeEYZRo5PqvMfmm5bElwgGjHUVwMsVO8JyUb4j6D6huc9EbqpLb3QXPXUPJ2U_bdWk4vDJe1nxCAdoUPEQmv_tWya0BdSep9ov3XGnoJgH3KcAGm1OJxMgsVrUVe1xjVBMqa62Y8-ahu5ZRnuwWYi5QZGFDSojBB0kOMKTgJfrYGGjfQj_cEtjzcE-0xzee5tn2ut1IA';
+// ATENÇÃO: TOKEN HARDCODED. USE VARIÁVEIS DE AMBIENTE EM PRODUÇÃO!
+const AUTH_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6Ijk3MTEzMzkyYjNjYzc0NmZlZWU0NmQ0NTRlYWZiYWFjNDk1NTRhMGI4MzI2Y2IxMWEyOTk2YzRiOTQ2OWZhNTNlMTAyNDNiZTMwZmFlYzEyMyIsIn0.eyJhdWQiOiJmM2YyYWRmMS00YWE5LTQwZmItYmMzNC0zMWNmNWYxZTQ5NTYiLCJqdGkiOiI5NzExMzM5MmIzY2M3NDZmZWVlNDZkNDU0ZWFmYmFhYzQ5NTU0YTBiODMyNmNiMTFhMjk5NmM0Yjk0NjlmYTUzZTAyNDNiZTMwZmFlYzEyMyIsImlhdCI6MTc2MDQ2NDQzNCwibmJmIjoxNzYwNDY0NDM0LCJleHAiOjE4MzAyOTc2MDAsInN1YiI6IjE0MDI2OTExIiwiZ3JhbnRfdHlwZSI6IiIsImFjY291bnRfaWQiOjM1MzcyODM2LCJiYXNlX2RvbWFpbiI6ImtvbW1vLmNvbSIsInZlcnNpb24iOjIsInNjb3BlcyI6WyJjcm0iLCJmaWxlcyIsImZpbGVzX2RlbGV0ZSIsIm5vdGlmaWNhdGlvbnMiLCJwdXNoX25vdGlmaWNhdGlvbnMiXSwidXNlcl9mbGFncyI6MCwiaGFzaF91dWlkIjoiZjhlZjg0ODktNjlkOC00ZDZmLThlY2UtNDUxY2JlYTczOWIzIiwiYXBpX2RvbWFpbiI6ImFwaS1jLmtvbW1vLmNvbSJ9.rz-xAf86xU17U2zG6OjhIMLv6I8AcAGmKN7EuqBz-efL4tWEbVEOBpty58tE8yHe1WTaY3I3sG_fVvKBSvQ4oxP-mVLzfzddW0TJnupEvKEMq9vgODrR5DmHaYSUAyTm_dmJDQzDxpU13ySeEYZRo5PqvMfmm5bElwgGjHUVwMsVO8JyUb4j6D6huc9EbqpLb3QXPXUPJ2U_bdWk4vDJe1nxCAdoUPEQmv_tWya0BdSep9ov3XGnoJgH3KcAGm1OJxMgsVrUVe1xjVBMqa62Y8-ahu5ZRnuwWYi5QZGFDSojBB0kOMKTgJfrYGGjfQj_cEtjzcE-0xzee5tn2ut1IA';
 
 // --- FUNÇÃO AUXILIAR PARA TRATAMENTO DE ERROS ---
 const handleError = (error, res, entityName) => {
-    console.error(`Erro ao chamar a API Kommo (${entityName}):`, error.response ? error.response.data : error.message);
+    console.error(`Erro ao chamar a API Kommo (${entityName}):`, error.response ? JSON.stringify(error.response.data, null, 2) : error.message);
     
     const status = error.response ? error.response.status : 500;
     const errorMessage = error.response && error.response.data 
@@ -34,6 +34,7 @@ const handleError = (error, res, entityName) => {
 
 // --- [ROTA 1] CRIAR CONTATO ---
 // Endpoint: POST /create-contact-proxy
+// Payload esperado: Array de objetos de Contato
 // Retorno: Array de IDs de Contatos (Numbers)
 app.post('/create-contact-proxy', async (req, res) => {
     const requestBody = req.body;
@@ -74,17 +75,13 @@ app.post('/create-contact-proxy', async (req, res) => {
 
 // --- [ROTA 2] CRIAR LEAD (NEGÓCIO) ---
 // Endpoint: POST /create-lead-proxy
+// Payload esperado: { name: string, price?: number, contact_id: number }
 // Retorno: Array de IDs de Leads (Numbers)
 app.post('/create-lead-proxy', async (req, res) => {
     
-    // --- 1. RECEBER VARIÁVEIS DO CLIENTE ---
-    const { 
-        name, 
-        price,
-        contact_id 
-    } = req.body; 
+    const { name, price, contact_id } = req.body; 
 
-    // Validação básica
+    // Validação de entrada
     if (!name || !contact_id) {
         return res.status(400).json({
             success: false,
@@ -92,7 +89,7 @@ app.post('/create-lead-proxy', async (req, res) => {
         });
     }
 
-    // Garante que o ID do contato é um número inteiro (Correção para o erro 400 de validação)
+    // Garante que o ID do contato é um número inteiro (Crucial para validação do Kommo)
     const contactIdAsNumber = parseInt(contact_id, 10);
 
     if (isNaN(contactIdAsNumber) || contactIdAsNumber <= 0) {
@@ -102,24 +99,22 @@ app.post('/create-lead-proxy', async (req, res) => {
         });
     }
 
-    // --- 2. MONTAR O PAYLOAD COM VALORES FIXOS E VARIÁVEIS ---
-
-    // Valores fixos
+    // --- Montagem do Payload Kommo (com valores fixos) ---
     const FIXED_PIPELINE_ID = 12205980;
     const FIXED_STATUS_ID = 94307160;
-    const FIXED_RESPONSIBLE_USER_ID = 0; // 0 geralmente significa "Não atribuído"
+    const FIXED_RESPONSIBLE_USER_ID = 0; 
 
     const kommoPayload = [
         {
             "name": name, 
-            "price": price || 0, // Usa o preço do cliente, default 0
+            "price": price || 0, 
             "pipeline_id": FIXED_PIPELINE_ID, 
             "status_id": FIXED_STATUS_ID, 
             "responsible_user_id": FIXED_RESPONSIBLE_USER_ID, 
             "_embedded": {
                 "contacts": [
                     {
-                        "id": contactIdAsNumber // Usando o ID validado e como número
+                        "id": contactIdAsNumber // ID validado e como número
                     }
                 ]
             }
@@ -127,7 +122,6 @@ app.post('/create-lead-proxy', async (req, res) => {
     ];
 
     try {
-        // --- 3. CHAMAR A API EXTERNA ---
         const responseKommo = await axios.post(KOMMO_API_URL_LEADS, kommoPayload, {
             headers: {
                 'Authorization': `Bearer ${AUTH_TOKEN}`,
@@ -138,7 +132,6 @@ app.post('/create-lead-proxy', async (req, res) => {
 
         const data = responseKommo.data;
 
-        // --- 4. FILTRAR A RESPOSTA (Retornar IDs dos Leads) ---
         if (data && data._embedded && data._embedded.leads) {
             
             const leadIDs = data._embedded.leads.map(lead => lead.id);
@@ -162,10 +155,80 @@ app.post('/create-lead-proxy', async (req, res) => {
 });
 
 
+// --- [ROTA 3] ATUALIZAR CAMPOS CUSTOMIZADOS DE LEAD ---
+// Endpoint: PATCH /update-lead-fields-proxy/:leadId
+// Payload esperado: { custom_fields_values: [ ... ] }
+// Retorno: Status de sucesso e o ID do Lead atualizado.
+app.patch('/update-lead-fields-proxy/:leadId', async (req, res) => {
+    
+    // Captura o ID do Lead da URL
+    const leadId = req.params.leadId; 
+    const requestBody = req.body; 
+
+    // Validação do ID do Lead na URL
+    const leadIdAsNumber = parseInt(leadId, 10);
+
+    if (isNaN(leadIdAsNumber) || leadIdAsNumber <= 0) {
+        return res.status(400).json({
+            success: false,
+            message: "O ID do Lead na URL é inválido ou não é um número inteiro válido."
+        });
+    }
+
+    // Validação do corpo da requisição
+    if (!requestBody || !requestBody.custom_fields_values) {
+        return res.status(400).json({
+            success: false,
+            message: "O corpo da requisição deve conter o objeto 'custom_fields_values'."
+        });
+    }
+
+    // URL final para a API Kommo: /api/v4/leads/123456
+    const finalKommoUrl = `${KOMMO_API_URL_LEADS}/${leadIdAsNumber}`;
+
+    try {
+        // --- CHAMAR A API EXTERNA (PATCH) ---
+        const responseKommo = await axios.patch(finalKommoUrl, requestBody, {
+            headers: {
+                'Authorization': `Bearer ${AUTH_TOKEN}`,
+                'Content-Type': 'application/json',
+                'User-Agent': 'API Proxy Node.js (Update Lead Fields)'
+            }
+        });
+
+        const data = responseKommo.data;
+
+        // Tenta retornar o ID do lead atualizado
+        if (data && data._embedded && data._embedded.leads) {
+            
+            return res.status(200).json({
+                success: true,
+                message: `Lead ${leadIdAsNumber} atualizado com sucesso.`,
+                updated_lead_id: data._embedded.leads[0].id
+            });
+
+        } else {
+            // Se o retorno não tiver _embedded (ex: 204 No Content), ainda é sucesso
+            return res.status(200).json({
+                success: true,
+                message: `Lead ${leadIdAsNumber} atualizado. Resposta da Kommo: ${responseKommo.statusText}`
+            });
+        }
+
+    } catch (error) {
+        return handleError(error, res, `Atualização de Lead (ID: ${leadId})`);
+    }
+});
+
+
+// --- INICIALIZAÇÃO DO SERVIDOR ---
 app.listen(PORT, () => {
-    console.log(`\n--- Servidor Proxy Kommo Iniciado ---`);
+    console.log(`\n==============================================`);
+    console.log(`=== Servidor Proxy Kommo Iniciado ===`);
     console.log(`API rodando em http://localhost:${PORT}`);
-    console.log(`Endpoint Contatos: POST /create-contact-proxy`);
-    console.log(`Endpoint Leads: POST /create-lead-proxy`);
-    console.log('-------------------------------------\n');
+    console.log(`----------------------------------------------`);
+    console.log(`[POST] Contatos: /create-contact-proxy`);
+    console.log(`[POST] Leads:    /create-lead-proxy`);
+    console.log(`[PATCH] Update:  /update-lead-fields-proxy/:leadId`);
+    console.log(`==============================================\n`);
 });
