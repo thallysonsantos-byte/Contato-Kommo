@@ -9,7 +9,7 @@ const PORT = 3002;
 app.use(express.json());
 
 // --- Configurações da API Externa (Kommo/amoCRM) ---
-const KOMMO_API_URL_BASE = 'https://iborges.kommo.com/api/v4';
+const KOMMO_API_URL_BASE = 'https://cbrasil.kommo.com/api/v4';
 const KOMMO_API_URL_CONTACTS = `${KOMMO_API_URL_BASE}/contacts`;
 const KOMMO_API_URL_LEADS = `${KOMMO_API_URL_BASE}/leads`;
 
